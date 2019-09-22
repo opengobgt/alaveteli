@@ -7,6 +7,10 @@ class AlaveteliPro::AccountRequestController < ApplicationController
     feature_enabled?(:pro_pricing)
   }
 
+  before_action :authenticate, :check_pro_self_serve, only: :create, if: -> {
+    feature_enabled?(:pro_self_serve)
+  }
+
   def index
   end
 
@@ -34,5 +38,25 @@ class AlaveteliPro::AccountRequestController < ApplicationController
 
   def check_pro_pricing
     redirect_to pro_plans_path
+  end
+
+  def check_pro_self_serve
+    current_user.add_role(:pro)
+
+    flash[:new_pro_user] = true
+    flash[:notice] = _('Welcome to {{pro_site_name}}!',
+                       pro_site_name: AlaveteliConfiguration.pro_site_name)
+
+    redirect_to alaveteli_pro_dashboard_path
+  end
+
+  def authenticate
+    post_redirect_params = {
+      web: _('To upgrade your account'),
+      email: _('Then you can upgrade your account'),
+      email_subject: _('To upgrade your account')
+    }
+
+    authenticated?(post_redirect_params)
   end
 end
